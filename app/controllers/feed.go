@@ -59,10 +59,12 @@ func (f *FeedController) postReceive(c *gin.Context) {
 	phidType := constants.PhidType(res.Type)
 	icon := messages.PhidTypeToIcon(phidType)
 
-	f.Slacker.FeedPost(storyText)
+	sendToFeedChannel := true
 
 	switch phidType {
 	case constants.PhidTypeCommit:
+		sendToFeedChannel = false
+
 		channelName, err := f.Commits.Resolve(res.Name)
 		if err != nil {
 			f.Logger.Error(err)
@@ -106,6 +108,10 @@ func (f *FeedController) postReceive(c *gin.Context) {
 			f.Slacker.SimplePost(channelName, storyText, icon, false)
 		}
 		break
+	}
+
+	if sendToFeedChannel {
+		f.Slacker.FeedPost(storyText)
 	}
 
 	c.JSON(200, gin.H{
